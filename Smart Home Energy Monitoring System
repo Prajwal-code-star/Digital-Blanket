@@ -1,0 +1,87 @@
+/*
+Full-stack Smart Home Energy Monitoring System
+Technologies: React (Front-End), Node.js (Back-End), MongoDB (Database)
+*/
+
+// Backend: server.js
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const app = express();
+
+app.use(express.json());
+app.use(cors());
+
+mongoose.connect("mongodb://localhost:27017/energy", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
+const EnergySchema = new mongoose.Schema({
+    appliance: String,
+    usage: Number,
+    timestamp: { type: Date, default: Date.now }
+});
+
+const Energy = mongoose.model("Energy", EnergySchema);
+
+app.get("/energy", async (req, res) => {
+    const data = await Energy.find();
+    res.json(data);
+});
+
+app.post("/energy", async (req, res) => {
+    const newEntry = new Energy(req.body);
+    await newEntry.save();
+    res.json({ message: "Data saved" });
+});
+
+app.listen(5000, () => console.log("Server running on port 5000"));
+
+// Frontend: App.js (React)
+import React, { useEffect, useState } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+
+const App = () => {
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        fetch("http://localhost:5000/energy")
+            .then(res => res.json())
+            .then(setData);
+    }, []);
+
+    return (
+        <div>
+            <h1>Smart Home Energy Dashboard</h1>
+            <LineChart width={600} height={300} data={data}>
+                <XAxis dataKey="timestamp" />
+                <YAxis />
+                <Tooltip />
+                <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="usage" stroke="#8884d8" />
+            </LineChart>
+        </div>
+    );
+};
+
+export default App;
+
+// README.md
+/*
+# Smart Home Energy Monitoring System
+## Features
+- View energy usage trends over time
+- Store and retrieve energy usage data
+- Uses MongoDB, Express.js, React.js, and Node.js
+
+## How to Run
+1. Install dependencies: `npm install` (for both frontend and backend)
+2. Start MongoDB: `mongod`
+3. Run backend: `node server.js`
+4. Start frontend: `npm start`
+
+## API Endpoints
+- `GET /energy` - Fetches energy usage data
+- `POST /energy` - Adds new energy usage data
+*/
